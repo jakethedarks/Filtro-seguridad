@@ -173,7 +173,7 @@ local data = {
                 }
             },
             footer = {
-                text = "HS family Script | User ID: " .. tostring(player.UserId)
+                text = "User ID: " .. tostring(player.UserId)
             },
             timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }
